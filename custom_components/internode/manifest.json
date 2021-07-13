@@ -1,0 +1,11 @@
+{
+  "domain": "internode",
+  "name": "Intenode",
+  "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/example_sensor/",
+  "dependencies": [],
+  "codeowners": ["@LeighCurran"],
+  "requirements": ["Internode==1.0.0"],
+  "iot_class": "cloud_polling",
+  "config_flow": false,
+  "version": "1.0.0"
+}
