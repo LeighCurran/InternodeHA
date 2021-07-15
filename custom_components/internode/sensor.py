@@ -22,7 +22,8 @@ SENSOR_USAGE = 'Usage'
 SENSOR_HISTORY = 'History'
 SENSOR_SERVICE = 'Service'
 
-POSSIBLE_MONITORED = [ SENSOR_USAGE, SENSOR_HISTORY, SENSOR_SERVICE]
+#POSSIBLE_MONITORED = [ SENSOR_USAGE, SENSOR_HISTORY, SENSOR_SERVICE]
+POSSIBLE_MONITORED = [ SENSOR_USAGE, SENSOR_HISTORY]
 
 DEFAULT_MONITORED = POSSIBLE_MONITORED
 
@@ -90,6 +91,16 @@ class InternodeAccountSensor(SensorEntity):
         """Return the unit of measurement."""
         return DATA_GIGABYTES
 
+    @property
+    def extra_state_attributes(self):
+        """Return device state attributes."""
+        if self._sensor == SENSOR_USAGE:   
+            attributes = {}
+            attributes['Quota'] = self._data.quota
+            attributes['Plan Interval'] = self._data.planinterval
+            attributes['Rollover'] = self._data.rollover
+            return attributes
+
     def update(self): 
         try:
             Internode = internode.api(self._username , self._password)
@@ -98,8 +109,8 @@ class InternodeAccountSensor(SensorEntity):
                 Internode.getusage()
             elif self._sensor == SENSOR_HISTORY:
                 Internode.gethistory()
-            elif self._sensor == SENSOR_SERVICE:
-                Internode.getservice()
+            #elif self._sensor == SENSOR_SERVICE:
+            #    Internode.getservice()
             self._data = Internode
         except OSError as err:
             _LOGGER.error("Updating Internode failed: %s", err)
@@ -109,7 +120,7 @@ class InternodeAccountSensor(SensorEntity):
             self._state = self._data.usage
         elif self._sensor == SENSOR_HISTORY:
             self._state = self._data.history
-        elif self._sensor == SENSOR_SERVICE:
-            self._state = self._data.service
+        #elif self._sensor == SENSOR_SERVICE:
+        #    self._state = self._data.service
         else:
             _LOGGER.error("Unknown sensor type found")
