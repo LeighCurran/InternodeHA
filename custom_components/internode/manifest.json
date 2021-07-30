@@ -1,7 +1,8 @@
 {
   "domain": "internode",
   "name": "Intenode",
-  "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/example_sensor/",
+  "documentation": "https://github.com/LeighCurran/InternodeHA",
+  "issue_tracker": "https://github.com/LeighCurran/InternodeHA/issues",
   "dependencies": [],
   "codeowners": ["@LeighCurran"],
   "requirements": ["Internode==1.1.1"],
