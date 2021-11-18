@@ -5,7 +5,13 @@ import logging
 import internode
 import voluptuous as vol
 
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
+from homeassistant.components.sensor import (
+    PLATFORM_SCHEMA, 
+    STATE_CLASS_TOTAL,
+    STATE_CLASS_MEASUREMENT,
+    SensorEntity
+)
+
 from homeassistant.const import (
     CONF_USERNAME,
     CONF_PASSWORD,
@@ -22,8 +28,7 @@ SENSOR_USAGE = 'Usage'
 SENSOR_HISTORY = 'History'
 SENSOR_SERVICE = 'Service'
 
-#POSSIBLE_MONITORED = [ SENSOR_USAGE, SENSOR_HISTORY, SENSOR_SERVICE]
-POSSIBLE_MONITORED = [ SENSOR_USAGE, SENSOR_HISTORY]
+POSSIBLE_MONITORED = [SENSOR_USAGE, SENSOR_HISTORY]
 
 DEFAULT_MONITORED = POSSIBLE_MONITORED
 
@@ -49,11 +54,13 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     name = config.get(CONF_NAME)
 
     try:
-        internode.api(username, password)
+        Internode = internode.api(username, password)
+        _LOGGER.debug("Error: %s", Internode.Error)
     except OSError as err:
         _LOGGER.error("Connection to Internode failed: %s", err)
     
     for sensor in config.get(CONF_MONITORED_CONDITIONS):
+        _LOGGER.debug("Adding sensor: %s", sensor)
         add_entities([InternodeAccountSensor(username, password, sensor, name)], True)
 
 
@@ -70,6 +77,7 @@ class InternodeAccountSensor(SensorEntity):
         self._unit_of_measurement = None
         self._attributes = {}
         self._data = None
+        self._uniqueid = self._name
 
     @property
     def name(self):
@@ -82,14 +90,27 @@ class InternodeAccountSensor(SensorEntity):
         return self._state
 
     @property
-    def icon(self):
-        """Return the icon to use in the frontend."""
-        return "mdi:connection"
+    def state_class(self):
+        """Return the state class of the sensor."""
+        if self._sensor == SENSOR_USAGE:
+            return STATE_CLASS_MEASUREMENT
+        elif self._sensor == SENSOR_HISTORY:
+            return STATE_CLASS_TOTAL
+
+    @property
+    def unique_id(self):
+        """Return the unique_id of the sensor."""
+        return self._uniqueid
 
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return DATA_GIGABYTES
+    
+    @property
+    def icon(self):
+        """Return the icon to use in the frontend."""
+        return "mdi:connection"
 
     @property
     def extra_state_attributes(self):
@@ -103,14 +124,13 @@ class InternodeAccountSensor(SensorEntity):
 
     def update(self): 
         try:
+            _LOGGER.debug("Updating sensor: %s", self._sensor)
             Internode = internode.api(self._username , self._password)
 
             if self._sensor == SENSOR_USAGE:
                 Internode.getusage()
             elif self._sensor == SENSOR_HISTORY:
                 Internode.gethistory()
-            #elif self._sensor == SENSOR_SERVICE:
-            #    Internode.getservice()
             self._data = Internode
         except OSError as err:
             _LOGGER.error("Updating Internode failed: %s", err)
@@ -120,7 +140,5 @@ class InternodeAccountSensor(SensorEntity):
             self._state = self._data.usage
         elif self._sensor == SENSOR_HISTORY:
             self._state = self._data.history
-        #elif self._sensor == SENSOR_SERVICE:
-        #    self._state = self._data.service
         else:
             _LOGGER.error("Unknown sensor type found")
